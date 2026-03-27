@@ -1,4 +1,5 @@
 import os
+from google.genai import types
 
 
 def get_file_content(working_directory, file_path):
@@ -24,3 +25,19 @@ def get_file_content(working_directory, file_path):
         return f"Error: {e}"
 
     return content
+
+
+schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="Opens the specified file in the current working directory via file path, with a maximum read capacity of 10000 characters.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The target file path relative from the working directory",
+            ),
+        },
+        required=["file_path"],
+    ),
+)
