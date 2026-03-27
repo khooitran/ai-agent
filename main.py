@@ -3,6 +3,8 @@ import argparse
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from prompts import system_prompt
+from functions.get_files_info import schema_get_files_info
 
 
 def main():
@@ -23,10 +25,15 @@ def main():
         types.Content(role="user", parts=[types.Part(text=args.user_prompt)]),
     ]
 
+    available_functions = types.Tool(function_declarations=[schema_get_files_info])
+
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=messages,
+        config=types.GenerateContentConfig(
+            tools=[available_functions], system_instruction=system_prompt, temperature=0
+        ),
     )
 
     if response.usage_metadata is None:
@@ -37,7 +44,11 @@ def main():
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
 
-    print(response.text)
+    if response.function_calls:
+        for function_call in response.function_calls:
+            print(f"Calling function: {function_call.name}({function_call.args})")
+    else:
+        print(response.text)
 
 
 if __name__ == "__main__":
